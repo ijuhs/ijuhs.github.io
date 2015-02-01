@@ -1,0 +1,124 @@
+<html lang="en">
+<head>
+	<title>Fat Calc</title>
+<style>
+	/*centerize*/
+	html {}
+	html, body {width:100%; height:100%;}
+  body { display:table; margin:0; }
+
+  .container { margin: 0; padding:0; overflow: auto;  display:table-cell; vertical-align:middle}
+	.opt_form { margin:auto; width:15rem; padding:1.5rem; white-space:nowrap; background-color:#eee; text-align:right; }
+	.opt_form label {}
+	.opt_form input { width:5rem; }
+	#log {margin:auto; margin-top:1rem; text-align: center; height:10em;}
+</style>
+</head>
+<body>
+<div class="container">
+<form class="opt_form" action="fat_calc.html">
+	<label for="weight">Weight (kg): </label><input name="weight" value=""><br>
+	<label for="fat_per">Fat Percentage (%): </label><input name="fat_per" value=""><br>
+	<label for="fat_weight">Fat Weight (kg): </label><input name="fat_weight" value=""><br>
+	<label for="height">Height (m): </label><input name="height" value=""><br>
+	<label for="bmi">BMI: </label><input name="bmi" value=""><br>
+  <input type="submit" value="Submit">
+</form>
+<pre id="log"></pre>
+</div>
+
+<script>
+	function param(name) {
+	  return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+	}
+	function saveJson(storage, key, obj){
+		storage.setItem(key, JSON.stringify(obj));
+	}
+	function loadJson(storage, key){
+		var val = storage.getItem(key);
+		return val === null ? val : JSON.parse(val);
+	}
+
+  var inputs = document.getElementsByTagName('input');
+  var w = inputs[0];
+  var fp = inputs[1];
+  var fw = inputs[2];
+	var h = inputs[3];
+	var bmi = inputs[4];
+	var sm = inputs[5];
+  var lg = document.getElementById('log');
+
+	var storage_key = 'fat_calc_inputs';
+  function loadInputs(){
+	  var savedInputs = loadJson(localStorage, storage_key);
+		if(savedInputs){
+			w.value = savedInputs.w;
+			fp.value = savedInputs.fp;
+			fw.value = savedInputs.fw;
+      h.value = savedInputs.h;
+      bmi.value = savedInputs.bmi;
+			lg.textContent = savedInputs.lg;
+		}	
+  }
+	function saveInputs(){
+		saveJson(localStorage, storage_key, {w: w.value, fp: fp.value, fw: fw.value, h: h.value, bmi: bmi.value, lg: lg.textContent});
+	}
+	function showLog(){
+		var newLog = 'Time: ' + (new Date).toLocaleString() + ', Weight: ' + w.value + ', Fat Percentage: ' + fp.value + ', Fat Weight: ' + fw.value + ', Height: ' + h.value + ', BMI: ' + bmi.value; //should use some printf like function.
+		var oldLogs = lg.textContent.split("\n");
+		if(oldLogs[0] === newLog)
+			return;
+		if(oldLogs.length > 9)
+			oldLogs.length = 9;
+		lg.textContent = newLog + "\n" + oldLogs.join("\n");
+	}
+	function showLogAndSaveInputs(){
+		showLog();
+		saveInputs();
+	}
+
+	loadInputs();
+
+  var roundNum = 2;
+	function calc_fat_weight(){
+    fw.value = (w.value * fp.value / 100).toFixed(roundNum);
+    saveInputs();
+	}
+  function calc_fat_per(){
+    fp.value = (fw.value / w.value * 100).toFixed(roundNum);
+    saveInputs();
+	}
+  function calc_bmi(){
+    bmi.value = (w.value / (h.value * h.value)).toFixed(roundNum);
+    saveInputs();
+	}
+  function calc_weight(){
+    w.value = ((h.value * h.value) * bmi.value).toFixed(roundNum);
+    calc_fat_weight();
+	}
+
+  calc_fat_weight(param('weight')||w.value, param('fat_per')||fp.value);
+
+  for(var i in inputs){
+    inputs[i].oninput = function(e){
+      if(e.target == w || e.target == fp)
+        calc_fat_weight();
+      if(e.target == fw)
+        calc_fat_per();
+      if(e.target == h || e.target == w)
+        calc_bmi();
+      if(e.target == bmi)
+        calc_weight();
+    }
+  }
+
+	sm.onclick = function(e){
+	  showLogAndSaveInputs();
+	  e.preventDefault();
+	}
+
+	w.focus();
+	w.select();
+</script>
+</body>
+</html>

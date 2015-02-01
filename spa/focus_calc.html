@@ -1,0 +1,137 @@
+﻿<html lang="en">
+<head>
+	<title>focus Calc</title>
+<style>
+	/*centerize*/
+	html {}
+	html, body {width:100%; height:100%;}
+  body { display:table; margin:0; }
+
+  .container { margin: 0; padding:0; overflow: auto;  display:table-cell; vertical-align:middle}
+	.opt_form { margin:auto; width:18rem; padding:1.5rem; white-space:nowrap; background-color:#eee; text-align:right; }
+	.opt_form label {}
+	.opt_form input { width:5rem; }
+	.opt_form select {width:7rem;}
+	#log {margin:auto; margin-top:1rem; text-align: center; height:10rem;}
+
+	span.suffix {float:right; width:2rem;}
+</style>
+</head>
+<body>
+<div class="container">
+<form class="opt_form" action="focus_calc.html">
+	<label for="sensor">sensor: </label>
+	<select name="sensor">
+		<option value="23.4 16.7">APS-C</option>
+		<option value="18.0 13.5">Four Thirds</option>
+		<option value="13.2 8.8">1</option>
+		<option value="8.8 6.8" selected>2/3</option>
+		<option value="7.6 5.7">1/1.7</option>
+		<option value="6.4 4.8">1/2</option>
+		<option value="5.9 4.4">1/2.3</option>
+	</select><br>
+	<label for="sw">sensor width: </label><input name="sw" value=""><span class="suffix">mm</span><br>
+	<label for="sh">sensor height: </label><input name="sh" value=""><span class="suffix">mm</span><br>
+	<label for="fd">focal distance: </label><input name="fd" value=""><span class="suffix">m</span><br>
+	<label for="fw">focal width: </label><input name="fw" value=""><span class="suffix">m</span><br>
+	<label for="fh">focal height: </label><input name="fh" value=""><span class="suffix">m</span><br>
+	<label for="lw">lens distance for width: </label><input name="lw" value=""><span class="suffix">mm</span><br>
+  <label for="lh">lens distance for height: </label><input name="lh" value=""><span class="suffix">mm</span><br>
+  <input type="submit" value="Submit" hidden>
+</form>
+<pre id="log"></pre>
+</div>
+
+<script>
+	function saveJson(storage, key, obj){
+		storage.setItem(key, JSON.stringify(obj));
+	}
+	function loadJson(storage, key){
+		var val = storage.getItem(key);
+		return val === null ? val : JSON.parse(val);
+	}
+
+  var inputs = document.getElementsByTagName('input');
+  var sensor = document.getElementsByTagName('select')[0];
+  var sw = inputs[0];
+  var sh = inputs[1];
+	var fd = inputs[2];
+	var fw = inputs[3];
+	var fh = inputs[4];
+	var lw = inputs[5];
+  var lh = inputs[6];
+  var sm = inputs[7];
+  var lg = document.getElementById('log');
+
+	var storage_key = 'focus_calc_inputs';
+  function loadInputs(){
+	  var savedInputs = loadJson(localStorage, storage_key);
+		if(savedInputs){
+      sensor.value = savedInputs.sensor;
+      sw.value = savedInputs.sw;
+			sh.value = savedInputs.sh;
+			fd.value = savedInputs.fd;
+			fw.value = savedInputs.fw;
+      fh.value = savedInputs.fh;
+      lw.value = savedInputs.lw;
+      lh.value = savedInputs.lh;
+			lg.textContent = savedInputs.lg;
+		}	
+  }
+	function saveInputs(){
+		saveJson(localStorage, storage_key, {sensor: sensor.value, sw: sw.value, sh: sh.value, fd: fd.value, fw: fw.value, fh: fh.value, lw: lw.value, lh: lh.value, lg: lg.textContent});
+	}
+	function showLog(){
+		var newLog = 'Time: ' + (new Date).toLocaleString() + ', Sensor: ' + sensor.value + ', focal distance: ' + fd.value + ', focal width: ' + fw.value + ', focal height: ' + fh.value + ', lens distance for width: ' + lw.value + ', lens distance for height: ' + lh.value; //should use some printf like function.
+		var oldLogs = lg.textContent.split("\n");
+		if(oldLogs[0] === newLog)
+			return;
+		if(oldLogs.length > 9)
+			oldLogs.length = 9;
+		lg.textContent = newLog + "\n" + oldLogs.join("\n");
+	}
+	function showLogAndSaveInputs(){
+		showLog();
+		saveInputs();
+	}
+
+	loadInputs();
+
+	function calc_lens_distance(){
+    lw.value = Math.round(fd.value * sw.value / fw.value);
+    lh.value = Math.round(fd.value * sh.value / fh.value);
+    saveInputs();
+	}
+  function calc_focal_distance(width_or_height){
+    if(width_or_height == lw)
+      fd.value = Math.round(lw.value / sw.value * fw.value);
+    else
+      fd.value = Math.round(lh.value / sh.value * fh.value);
+    saveInputs();
+	}
+
+  sensor.onchange = function(e){
+    var v = sensor.value.split(' ');
+    sw.value = v[0];
+    sh.value = v[1];
+    calc_lens_distance();
+  }
+
+  for(var i in inputs){
+    inputs[i].oninput = function(e){
+      if(e.target == lw || e.target == lh)
+        calc_focal_distance(e.target);
+      else
+        calc_lens_distance();
+    }
+  }
+
+	sm.onclick = function(e){
+	  showLogAndSaveInputs();
+	  e.preventDefault();
+	}
+
+	sensor.focus();
+</script>
+</body>
+</html>
