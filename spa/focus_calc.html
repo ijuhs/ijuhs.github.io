@@ -8,7 +8,7 @@
   body { display:table; margin:0; }
 
   .container { margin: 0; padding:0; overflow: auto;  display:table-cell; vertical-align:middle}
-	.opt_form { margin:auto; width:18rem; padding:1.5rem; white-space:nowrap; background-color:#eee; text-align:right; }
+	.opt_form { margin:auto; width:23rem; padding:1.5rem; white-space:nowrap; background-color:#eee; text-align:right; }
 	.opt_form label {}
 	.opt_form input { width:5rem; }
 	.opt_form select {width:7rem;}
@@ -22,8 +22,9 @@
 <form class="opt_form" action="focus_calc.html">
 	<label for="sensor">sensor: </label>
 	<select name="sensor">
+		<option value="36 24">35mm</option>
 		<option value="23.4 16.7">APS-C</option>
-		<option value="18.0 13.5">Four Thirds</option>
+		<option value="18.0 13.5">4/3 (Four Thirds)</option>
 		<option value="13.2 8.8">1</option>
 		<option value="8.8 6.8" selected>2/3</option>
 		<option value="7.6 5.7">1/1.7</option>
@@ -37,6 +38,8 @@
 	<label for="fh">focal height: </label><input name="fh" value=""><span class="suffix">m</span><br>
 	<label for="lw">lens distance for width: </label><input name="lw" value=""><span class="suffix">mm</span><br>
   <label for="lh">lens distance for height: </label><input name="lh" value=""><span class="suffix">mm</span><br>
+	<label for="lw35">lens distance for width (35mm): </label><input name="lw35" value=""><span class="suffix">mm</span><br>
+  <label for="lh35">lens distance for height (35mm): </label><input name="lh35" value=""><span class="suffix">mm</span><br>
   <input type="submit" value="Submit" hidden>
 </form>
 <pre id="log"></pre>
@@ -53,14 +56,17 @@
 
   var inputs = document.getElementsByTagName('input');
   var sensor = document.getElementsByTagName('select')[0];
-  var sw = inputs[0];
-  var sh = inputs[1];
-	var fd = inputs[2];
-	var fw = inputs[3];
-	var fh = inputs[4];
-	var lw = inputs[5];
-  var lh = inputs[6];
-  var sm = inputs[7];
+	var i = 0;
+  var sw = inputs[i++];
+  var sh = inputs[i++];
+	var fd = inputs[i++];
+	var fw = inputs[i++];
+	var fh = inputs[i++];
+	var lw = inputs[i++];
+  var lh = inputs[i++];
+	var lw35 = inputs[i++];
+  var lh35 = inputs[i++];
+  var sm = inputs[i++];
   var lg = document.getElementById('log');
 
 	var storage_key = 'focus_calc_inputs';
@@ -75,11 +81,13 @@
       fh.value = savedInputs.fh;
       lw.value = savedInputs.lw;
       lh.value = savedInputs.lh;
+	    lw35.value = savedInputs.lw35;
+      lh35.value = savedInputs.lh35;
 			lg.textContent = savedInputs.lg;
 		}	
   }
 	function saveInputs(){
-		saveJson(localStorage, storage_key, {sensor: sensor.value, sw: sw.value, sh: sh.value, fd: fd.value, fw: fw.value, fh: fh.value, lw: lw.value, lh: lh.value, lg: lg.textContent});
+		saveJson(localStorage, storage_key, {sensor: sensor.value, sw: sw.value, sh: sh.value, fd: fd.value, fw: fw.value, fh: fh.value, lw: lw.value, lh: lh.value, lw35: lw35.value, lh35: lh35.value, lg: lg.textContent});
 	}
 	function showLog(){
 		var newLog = 'Time: ' + (new Date).toLocaleString() + ', Sensor: ' + sensor.value + ', focal distance: ' + fd.value + ', focal width: ' + fw.value + ', focal height: ' + fh.value + ', lens distance for width: ' + lw.value + ', lens distance for height: ' + lh.value; //should use some printf like function.
@@ -102,6 +110,16 @@
     lh.value = Math.round(fd.value * sh.value / fh.value);
     saveInputs();
 	}
+  function calc_lens_distance_from35(){
+    lw.value = Math.round(lw35.value * (sw.value / 36));
+    lh.value = Math.round(lh35.value * (sh.value / 24));
+    saveInputs();
+	}
+	function calc_lens_distance_35(){
+    lw35.value = Math.round(lw.value * (36 / sw.value));
+    lh35.value = Math.round(lh.value * (24 / sh.value));
+    saveInputs();
+	}
   function calc_focal_distance(width_or_height){
     if(width_or_height == lw)
       fd.value = Math.round(lw.value / sw.value * fw.value);
@@ -115,14 +133,21 @@
     sw.value = v[0];
     sh.value = v[1];
     calc_lens_distance();
+    calc_lens_distance_35();
   }
 
   for(var i in inputs){
     inputs[i].oninput = function(e){
-      if(e.target == lw || e.target == lh)
-        calc_focal_distance(e.target);
-      else
+      if(e.target == lw || e.target == lh){
+        calc_focal_distance(e);
+        calc_lens_distance_35();
+    	}else if(e.target == lw35 || e.target == lh35){
+        calc_lens_distance_from35(e.target);
+        calc_focal_distance(e.target == lw35 ? lw : lh);
+      }else{
         calc_lens_distance();
+        calc_lens_distance_35();
+      }
     }
   }
 
