@@ -5,6 +5,8 @@ frameRecur(window, function(f){
 */
 
 function frameRecur(win, fn){
+  if(!win)
+    return false;
   fn(win);
   var fs = win.frames;
   if(!fs)
