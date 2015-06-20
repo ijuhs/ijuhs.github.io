@@ -22,11 +22,13 @@
 <form class="opt_form" action="focus_calc.html">
 	<label for="sensor">sensor: </label>
 	<select name="sensor">
+		<option value="43.8 32.8">Medium</option>
 		<option value="36 24">35mm</option>
-		<option value="23.4 16.7">APS-C</option>
-		<option value="18.0 13.5">4/3 (Four Thirds)</option>
+		<option value="23.6 15.8 selected">APS-C</option>
+		<option value="22.3 14.9">APS-C (Canon)</option>
+		<option value="17.3 13">4/3 (Four Thirds)</option>
 		<option value="13.2 8.8">1</option>
-		<option value="8.8 6.8" selected>2/3</option>
+		<option value="8.8 6.8">2/3</option>
 		<option value="7.6 5.7">1/1.7</option>
 		<option value="6.4 4.8">1/2</option>
 		<option value="5.9 4.4">1/2.3</option>
@@ -38,8 +40,8 @@
 	<label for="fh">focal height: </label><input name="fh" value=""><span class="suffix">m</span><br>
 	<label for="lw">lens distance for width: </label><input name="lw" value=""><span class="suffix">mm</span><br>
   <label for="lh">lens distance for height: </label><input name="lh" value=""><span class="suffix">mm</span><br>
-	<label for="lw35">lens distance for width (35mm): </label><input name="lw35" value=""><span class="suffix">mm</span><br>
-  <label for="lh35">lens distance for height (35mm): </label><input name="lh35" value=""><span class="suffix">mm</span><br>
+	<label for="lw35">35mm eq. focal length for width: </label><input name="lw35" value=""><span class="suffix">mm</span><br>
+  <label for="lh35">35mm eq. focal length for height: </label><input name="lh35" value=""><span class="suffix">mm</span><br>
   <input type="submit" value="Submit" hidden>
 </form>
 <pre id="log"></pre>
