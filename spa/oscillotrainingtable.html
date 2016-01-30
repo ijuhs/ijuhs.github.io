@@ -1,0 +1,374 @@
+<html>
+<head>
+<title>oscillo-training timer &amp; table</title>
+<style>
+:root{-webkit-print-color-adjust:exact}
+
+html, body {
+	width:100%;
+	height:100%;
+}
+html {display:table;}
+body {
+	display:table-cell;
+	vertical-align:middle;
+	text-align: center;
+	font-size: 1.2em;
+}
+
+h1 {
+	margin:1em;
+}
+
+#clock {
+	margin: 0 auto;
+  width: 300px;
+}
+
+button {
+	font-size:1em;
+	margin:1em;
+}
+
+.counters {
+	margin-bottom: 1em;
+}
+
+.last_count {
+	font-weight: bold;
+	color: blue;
+}
+
+#sp_training_count {
+	font-weight: bold;
+	color: red;
+}
+
+textarea {
+	margin-bottom:1em;
+}
+	
+#mytable {
+	border:1px solid #CCC;
+	padding: 0;
+	margin: 1em auto;
+	text-align: center;
+	font-size:120%;
+	display:none;
+}
+
+th {
+	font: bold 70% sans-serif;
+	color: #666;
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	border-top: 1px solid #ddd;
+
+	padding: 0.3em;
+	background-color: #f5f5f5;
+}
+
+td {
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	padding: 6px;
+	color: #222;
+}
+
+tr {
+	font-weight: bold;
+}
+
+tr.training, td:first-child {
+  font-weight: normal;
+  font-size: 70%;
+  color: #444
+}
+
+tr:nth-child(odd) {
+  background: #fff;
+}
+
+tr:nth-child(even) {
+	background: #fafafa;
+}
+
+tr:not(.day):nth-child(odd) > th {
+	border-left: 1px solid #ddd;
+	border-top: 0;
+  background-color: #fff;
+	font: bold 70% sans-serif;
+}
+
+tr:nth-child(even) > th:not(:last-child){
+	border-left: 1px solid #ddd;
+	border-top: 0;
+  background-color: #f7f7f7;
+	font: bold 70% sans-serif;
+	color: #777;
+}
+
+#show_table {
+	color: #777;
+}
+
+</style>
+<link rel="stylesheet" href="oscillotrainingtable_asets/flipclock.css">
+</head>
+<body>
+<h1>timer &amp; table</h1>
+<div id="clock"></div>
+<button id="bt_rewind">&lt;</button><button id="bt_start">start</button><button id="bt_forward">&gt;</button><br>
+<div class="counters">
+<span>today: </span><span id="sp_today">_</span><br>
+<span>today's count: </span><span id="sp_todays_count">_</span><br>
+<span>training name: </span><span id="sp_training_name">_</span><br>
+<span>training base count: </span><span id="sp_training_base">_</span><br>
+<span>training count: </span><span id="sp_training_count">_</span><br>
+</div>
+configuration:<br>
+<textarea name="" id="ta_config" cols="40" rows="15">
+{
+  "training": [
+    "sit up",
+    47,
+    "curl",
+    25,
+    "bend over row",
+    34,
+    "push up",
+    47,
+    "side raise",
+    37,
+    "squat",
+    37
+  ],
+  "interval": [
+    45,
+    45,
+    90,
+    90,
+    120,
+    120
+  ],
+  "ratio": {
+    "day": [
+      0.8,
+      0.8,
+      0.9,
+      0.9,
+      1,
+      1
+    ],
+    "set": [
+      0.75,
+      0.85,
+      0.7,
+      0.65,
+      1
+    ]
+  },
+  "training_a_day": 3,
+  "count": 0
+}
+</textarea>
+
+<p><a href="#" id="show_table">show/hide the table</a></p>
+
+<table id="mytable" cellspacing="0"></table>
+
+<script src="oscillotrainingtable_asets/jquery.js"></script>
+<script src="oscillotrainingtable_asets/flipclock.js"></script>
+<script src="oscillotrainingtable_asets/soundmanager2-jsmin.js"></script>
+
+<script>
+var mySound;
+soundManager.setup({
+	onready: function() {
+		mySound = soundManager.createSound({
+  		url: 'oscillotrainingtable_asets/sounds/Normal beep.wav'
+		})
+	}
+});
+function playSound () {
+  mySound.play();
+}
+
+
+
+var ta_config = document.getElementById('ta_config');
+var bt_start = document.getElementById('bt_start');
+var sp_today = document.getElementById('sp_today');
+var sp_todays_count = document.getElementById('sp_todays_count');
+var sp_training_name = document.getElementById('sp_training_name');
+var sp_training_base = document.getElementById('sp_training_base');
+var sp_training_count = document.getElementById('sp_training_count');
+var clock = $('#clock').FlipClock({
+    clockFace: 'MinuteCounter',
+    autoStart: false,
+    callbacks: {
+    	stop: onClockStop
+    }
+});
+
+//load/save configuration in the local storage.
+function saveJson(storage, key, obj){
+	storage.setItem(key, JSON.stringify(obj));
+}
+function loadJson(storage, key){
+	var val = storage.getItem(key);
+	return val === null ? val : JSON.parse(val);
+}
+var storage_key = 'oscillotrainingtable';
+function loadInputs(){
+  var savedInputs = loadJson(localStorage, storage_key);
+	if(savedInputs){
+    ta_config.value = savedInputs.ta_config;
+	}
+}
+function saveInputs(){
+	saveJson(localStorage, storage_key, {ta_config: ta_config.value});
+}
+
+loadInputs();
+
+var config;
+function loadConfig() {
+	config = JSON.parse(ta_config.value);
+}
+function saveConfig(){
+	ta_config.value = JSON.stringify(config, null, 2);
+	saveInputs();
+}
+loadConfig();
+
+//the user changed the configuration
+ta_config.addEventListener('change', function () {
+	loadConfig();
+	saveInputs();
+	updateTodaysCount();
+});
+
+function getSetCountADay(arguments) {
+	return config.training_a_day * config.ratio.set.length;
+}
+
+function updateTodaysCount() {
+	sp_todays_count.innerHTML = config.count % getSetCountADay();
+	return updateTrainingElements();
+}
+
+function getDayOfTable(){
+	return Math.floor(config.count / getSetCountADay()) % config.ratio.day.length;
+}
+function updateTrainingElements() {
+	var todays_count = parseInt(sp_todays_count.innerText);
+	var col_of_day_of_table = todays_count % config.ratio.set.length;
+	if(col_of_day_of_table == config.ratio.set.length - 1)
+		sp_todays_count.classList.add('last_count');
+	else
+		sp_todays_count.classList.remove('last_count');
+
+	var day_of_table = getDayOfTable();
+	sp_today.innerText = day_of_table + 1;
+  var training_index = Math.floor(config.count / config.ratio.set.length) % config.ratio.day.length;
+  var training_name = config.training[training_index * 2];
+  var training_base = config.training[training_index * 2 + 1];
+	sp_training_name.innerText = training_name;
+	sp_training_base.innerText = training_base;
+
+	var training_count = Math.floor(training_base * config.ratio.day[day_of_table] * config.ratio.set[config.count % config.ratio.set.length]);
+	sp_training_count.innerText = training_count;
+
+	updateTable();
+
+	return todays_count;
+}
+
+//the user clicked the start button.
+bt_start.addEventListener('click', function () {
+	if(clock.running){
+		clock.stop();
+		return;
+	}
+
+	config.count++;
+	saveConfig();
+	if(updateTodaysCount()){
+		clock.setTime(config.interval[getDayOfTable() - 1]);
+		clock.setCountdown(true);
+		clock.start();
+		bt_start.innerHTML = 'stop';
+	}
+});
+//rewind
+bt_rewind.addEventListener('click', function () {
+	config.count--;
+	saveConfig()
+	updateTodaysCount();
+});
+bt_forward.addEventListener('click', function () {
+	config.count++;
+	saveConfig();
+	updateTodaysCount();
+});
+
+$('#show_table').click(function() {
+	$('#mytable').toggle();
+	updateTable();
+	return false;
+});
+
+function onClockStop() {
+	bt_start.innerHTML = 'start';
+	window.focus();
+	playSound();
+}
+
+bt_start.focus();
+
+function isDayOfTrainning(iDay, iTrain){
+	var training_index = Math.floor(iTrain / 2);
+	var start_of_training_index_of_day = iDay * config.training_a_day % Math.floor(config.training.length / 2);
+	return start_of_training_index_of_day <= training_index && training_index < start_of_training_index_of_day + config.training_a_day;
+}
+
+function updateTable() {
+	var $t = $('#mytable');
+	if(!$t.is(':visible'))
+		return;
+
+	$t.html('');
+
+	config.ratio.day.forEach(function(vDay, iDay) {
+		$t.append('<tr class="day"><th>' + 'Day ' + (iDay+1) + ': ' + vDay +  'x' + '</th></tr>');
+		var $tr_training = $('<tr class="training">');
+		$t.append($tr_training);
+		$tr_training.append('<td>');
+		config.training.forEach(function(vTrain, iTrain) {
+			if(iTrain % 2 == 1 || !isDayOfTrainning(iDay, iTrain))
+				return;
+			$tr_training.append('<td>' + vTrain + '</td>');
+		});
+		config.ratio.set.forEach(function(vSet, iSet) {
+			var $tr_set = $('<tr class="set">');
+			$t.append($tr_set);
+			$tr_set.append($('<td>' + 'set ' + (iSet+1) + '</td>'));
+			config.training.forEach(function(vTrain, iTrain) {
+				if(iTrain % 2 == 0 || !isDayOfTrainning(iDay, iTrain))
+					return;
+				var $td = $('<td>' + Math.floor(vSet * vDay * vTrain) + '</td>');
+				$tr_set.append($td);
+				if(false) //TODO: iDay == today && todays_count == getSetCountADay()?
+					$td.addClass('hilight');
+			});
+		});
+	});
+
+	$('th', $t).attr('colspan', config.training.length / 2 + 1);
+}
+
+updateTodaysCount();
+</script>
+</body>
+</html>
