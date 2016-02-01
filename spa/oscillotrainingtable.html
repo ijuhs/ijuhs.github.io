@@ -295,7 +295,7 @@ bt_start.addEventListener('click', function () {
 	config.count++;
 	saveConfig();
 	if(updateTodaysCount()){
-		clock.setTime(config.interval[getDayOfTable() - 1]);
+		clock.setTime(config.interval[getDayOfTable()]);
 		clock.setCountdown(true);
 		clock.start();
 		bt_start.innerHTML = 'stop';
