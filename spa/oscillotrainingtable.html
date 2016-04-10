@@ -39,7 +39,7 @@ button {
 	color: blue;
 }
 
-#sp_training_count {
+#sp_rep {
 	font-weight: bold;
 	color: red;
 }
@@ -120,11 +120,11 @@ tr:nth-child(even) > th:not(:last-child){
 <div id="clock"></div>
 <button id="bt_rewind">&lt;</button><button id="bt_start">start</button><button id="bt_forward">&gt;</button><br>
 <div class="counters">
-<span>today: </span><span id="sp_today">_</span><br>
-<span>today's count: </span><span id="sp_todays_count">_</span><br>
-<span>training name: </span><span id="sp_training_name">_</span><br>
-<span>training base count: </span><span id="sp_training_base">_</span><br>
-<span>training count: </span><span id="sp_training_count">_</span><br>
+<span>day: </span><span id="sp_day">_</span><br>
+<span>set: </span><span id="sp_set_count">_</span><br>
+<span>training: </span><span id="sp_training">_</span><br>
+<span>max rep: </span><span id="sp_max_rep">_</span><br>
+<span>rep: </span><span id="sp_rep">_</span><br>
 </div>
 configuration:<br>
 <textarea name="" id="ta_config" cols="40" rows="15">
@@ -191,11 +191,11 @@ function playSound () {
 
 var ta_config = document.getElementById('ta_config');
 var bt_start = document.getElementById('bt_start');
-var sp_today = document.getElementById('sp_today');
-var sp_todays_count = document.getElementById('sp_todays_count');
-var sp_training_name = document.getElementById('sp_training_name');
-var sp_training_base = document.getElementById('sp_training_base');
-var sp_training_count = document.getElementById('sp_training_count');
+var sp_day = document.getElementById('sp_day');
+var sp_set_count = document.getElementById('sp_set_count');
+var sp_training = document.getElementById('sp_training');
+var sp_max_rep = document.getElementById('sp_max_rep');
+var sp_rep = document.getElementById('sp_rep');
 var clock = $('#clock').FlipClock({
     clockFace: 'MinuteCounter',
     autoStart: false,
@@ -250,7 +250,7 @@ function getSetCountADay(arguments) {
 }
 
 function updateTodaysCount() {
-	sp_todays_count.innerHTML = config.count % getSetCountADay();
+	sp_set_count.innerHTML = config.count % getSetCountADay();
 	return updateTrainingElements();
 }
 
@@ -258,27 +258,27 @@ function getDayOfTable(){
 	return Math.floor(config.count / getSetCountADay()) % config.ratio.day.length;
 }
 function updateTrainingElements() {
-	var todays_count = parseInt(sp_todays_count.innerText);
-	var col_of_day_of_table = todays_count % config.ratio.set.length;
+	var set_count = parseInt(sp_set_count.innerText);
+	var col_of_day_of_table = set_count % config.ratio.set.length;
 	if(col_of_day_of_table == config.ratio.set.length - 1)
-		sp_todays_count.classList.add('last_count');
+		sp_set_count.classList.add('last_count');
 	else
-		sp_todays_count.classList.remove('last_count');
+		sp_set_count.classList.remove('last_count');
 
 	var day_of_table = getDayOfTable();
-	sp_today.innerText = day_of_table + 1;
+	sp_day.innerText = day_of_table + 1;
   var training_index = Math.floor(config.count / config.ratio.set.length) % getTrainingADay();
-  var training_name = config.training[training_index * 2];
-  var training_base = config.training[training_index * 2 + 1];
-	sp_training_name.innerText = training_name;
-	sp_training_base.innerText = training_base;
+  var training = config.training[training_index * 2];
+  var max_rep = config.training[training_index * 2 + 1];
+	sp_training.innerText = training;
+	sp_max_rep.innerText = max_rep;
 
-	var training_count = Math.floor(training_base * config.ratio.day[day_of_table] * config.ratio.set[config.count % config.ratio.set.length]);
-	sp_training_count.innerText = training_count;
+	var rep = Math.floor(max_rep * config.ratio.day[day_of_table] * config.ratio.set[config.count % config.ratio.set.length]);
+	sp_rep.innerText = rep;
 
 	updateTable();
 
-	return todays_count;
+	return set_count;
 }
 
 //the user clicked the start button.
@@ -349,7 +349,7 @@ function updateTable() {
 					return;
 				var $td = $('<td>' + Math.floor(vSet * vDay * vTrain) + '</td>');
 				$tr_set.append($td);
-				if(false) //TODO: iDay == today && todays_count == getSetCountADay()?
+				if(false) //TODO: iDay == today && set_count == getSetCountADay()?
 					$td.addClass('hilight');
 			});
 		});
