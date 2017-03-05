@@ -1,0 +1,176 @@
+﻿<html lang="en">
+<head>
+	<title>Front Tele/Wide Conversion Lens Calculator</title>
+<style>
+	/*centerize*/
+	html {}
+	html, body {width:100%; height:100%;}
+  body { display:table; margin:0; }
+
+  .container { margin: 0; padding:0; overflow: auto;  display:table-cell; vertical-align:middle; text-align:center;}
+	p { margin-bottom:2em; }
+	.opt_form { margin:auto; width:25rem; padding:1.5rem; white-space:nowrap; background-color:#eee; text-align:right; }
+	.opt_form label {}
+	.opt_form input { width:5rem; }
+	.opt_form select {width:7rem;}
+	#log {margin:auto; margin-top:1rem; text-align: center; height:10rem; white-space:pre-wrap; max-width:80em;}
+
+	span.suffix {float:right; width:2rem;}
+</style>
+</head>
+<body>
+<div class="container">
+	<h1>
+		Front Tele/Wide Conversion Lens Calculator
+	</h1>
+	<p>
+		Initial values are an example which represents 200mm F2.8 + TCON17X.
+	</p>
+<form class="opt_form" action="front_conv_lens_calc.html">
+	<label for="pflength">primary lens focal length: </label><input name="pflength" value="200"><span class="suffix">mm</span><br>
+	<label for="pfnumber">primary lens F number: </label><input name="pfnumber" value="2.8"><span class="suffix">&nbsp;</span><br>
+	<label for="peaperture">primary effective aperturer: </label><input name="peaperture" value=""><span class="suffix">mm</span><br>
+	<br>
+	<label for="cvrdiameter">conversion lens rear glass diameter: </label><input name="cvrdiameter" value="35"><span class="suffix">mm</span><br>
+	<label for="cvratio">conversion ratio: </label><input name="cvratio" value="1.7"><span class="suffix">x</span><br>
+	<br>
+	<label for="cbflength">combined focal length: </label><input name="cbflength" value=""><span class="suffix">mm</span><br>
+	<label for="cbfnumber">combined F number: </label><input name="cbfnumber" value=""><span class="suffix">&nbsp;</span><br>
+	<label for="cbeaperture">combined effective aperture: </label><input name="cbeaperture" value=""><span class="suffix">mm</span><br>
+  <input type="submit" value="Submit" hidden>
+</form>
+<pre id="log"></pre>
+</div>
+
+<script>
+	function saveJson(storage, key, obj){
+		storage.setItem(key, JSON.stringify(obj));
+	}
+	function loadJson(storage, key){
+		var val = storage.getItem(key);
+		return val === null ? val : JSON.parse(val);
+	}
+
+  var inputs = document.getElementsByTagName('input');
+	var i = 0;
+  var pflength = inputs[i++];
+  var pfnumber = inputs[i++];
+  var peaperture = inputs[i++];
+	var cvrdiameter = inputs[i++];
+	var cvratio = inputs[i++];
+	var cbflength = inputs[i++];
+	var cbfnumber = inputs[i++];
+  var cbeaperture = inputs[i++];
+	var sm = inputs[i++];
+  var lg = document.getElementById('log');
+
+	var storage_key = 'front_conv_lens_calc_inputs';
+  function loadInputs(){
+	  var savedInputs = loadJson(localStorage, storage_key);
+		if(savedInputs){
+      pflength.value = savedInputs.pflength;
+			pfnumber.value = savedInputs.pfnumber;
+	    peaperture.value = savedInputs.peaperture;
+			cvrdiameter.value = savedInputs.cvrdiameter;
+			cvratio.value = savedInputs.cvratio;
+      cbflength.value = savedInputs.cbflength;
+      cbfnumber.value = savedInputs.cbfnumber;
+      cbeaperture.value = savedInputs.cbeaperture;
+			lg.textContent = savedInputs.lg;
+		}	
+  }
+	function saveInputs(){
+		saveJson(localStorage, storage_key, {pflength: pflength.value, pfnumber: pfnumber.value, peaperture: peaperture.value, cvrdiameter: cvrdiameter.value, cvratio: cvratio.value, cbflength: cbflength.value, cbfnumber: cbfnumber.value, cbeaperture: cbeaperture.value, lg: lg.textContent});
+	}
+	function showLog(){
+		var newLog = 'Time: ' + (new Date).toLocaleString() + ', primary focal length: ' + pflength.value + ', primary f number: ' + pfnumber.value + ', primary effective aperture: ' + peaperture.value + ', conversion lens rear glass diameter: ' + cvrdiameter.value + ', conversion ratio: ' + cvratio.value + ', combined focal length: ' + cbflength.value + ', combined f number: ' + cbfnumber.value + 'combined effective aperture: ' + cbeaperture.value; //should use some printf like function.
+		var oldLogs = lg.textContent.split("\n");
+		if(oldLogs[0] === newLog)
+			return;
+		if(oldLogs.length > 9)
+			oldLogs.length = 9;
+		lg.textContent = newLog + "\n" + oldLogs.join("\n");
+	}
+	function showLogAndSaveInputs(){
+		showLog();
+		saveInputs();
+	}
+
+	loadInputs();
+
+	function calc_pflength(){
+		pflength.value = Math.round(pfnumber.value * peaperture.value);
+	}
+  function calc_peaperture(){
+  	peaperture.value = Math.round(pflength.value / pfnumber.value);
+  }
+  function calc_cbflength(){
+  	cbflength.value = Math.round(pflength.value * cvratio.value);
+  }
+  function calc_cbfnumber(){
+  	cbfnumber.value = Math.max(pflength.value / cvrdiameter.value, pfnumber.value).toFixed(1);
+  }
+  function calc_cbeaperture(){
+  	cbeaperture.value = Math.round(cbflength.value / cbfnumber.value); // This should be close to cvrdiameter * cvratio.
+  }
+  function calc_combined_values(){
+  	calc_cbflength();
+  	calc_cbfnumber();
+  	calc_cbeaperture();
+  }
+  function calc_pflength_from_cbflength(){
+  	pflength.value = Math.round(cbflength.value / cvratio.value);
+  }
+  function calc_pflength_from_cbfnumber(){
+  	pflength.value = cvrdiameter.value * cbfnumber.value;
+  	pfnumber.value = cbfnumber.value;
+  	calc_peaperture();
+  }
+  function calc_cvrdiameter_from_cbeaperture(){
+  	cvrdiameter.value = Math.round(cbeaperture.value / cvratio.value);
+  }
+	
+  for(var i in inputs){
+    inputs[i].oninput = function(e){
+      if(e.target == pflength || e.target == pfnumber){
+        calc_peaperture();
+        calc_combined_values();
+    	}else if(e.target == peaperture){
+        calc_pflength();
+      }else if(e.target == cvrdiameter || e.target == cvratio){
+        calc_combined_values();
+      }else if(e.target == cbflength){
+      	calc_pflength_from_cbflength();
+      	calc_cbfnumber();
+      	calc_cbeaperture();
+      }else if(e.target == cbfnumber){
+      	calc_pflength_from_cbfnumber();
+      	calc_cbflength();
+      	calc_cbeaperture();
+      }else if(e.target == cbeaperture){
+      	calc_cvrdiameter_from_cbeaperture();
+      	calc_cbflength();
+      	calc_cbfnumber();
+      }else{
+      	console.error('An event occurred from an input without a handler.');
+      }
+
+      saveInputs();
+    }
+  }
+
+	sm.onclick = function(e){
+	  showLogAndSaveInputs();
+	  e.preventDefault();
+	}
+
+	pflength.focus();
+
+	if(peaperture.value == '')
+    calc_peaperture();
+	if(cbflength.value == '' || cbfnumber.value == '' || cbeaperture.value == '')
+    calc_combined_values();
+
+</script>
+</body>
+</html>
