@@ -14,7 +14,7 @@ function revolveInputFocus(rev)
     });
   }
 
-  var is = $('input:not([type]),input[type=text],input[type=email],input[type=url],input[type=number],input[type=search],input[type=password]').toArray(); //really nothing such a selector? See a comment of Ron Lussier in http://api.jquery.com/text-selector/.
+  var is = $('input:not([type]),input[type=text],input[type=email],input[type=url],input[type=number],input[type=search],input[type=password],textarea').toArray(); //really nothing such a selector? See a comment of Ron Lussier in http://api.jquery.com/text-selector/.
   var iof = _.indexOf(is, document.activeElement);
   set_focus_loop(rev
                  ? is.slice(0, iof).reverse().concat(is.slice(iof + 1).reverse())
