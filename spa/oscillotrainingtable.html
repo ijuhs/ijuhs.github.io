@@ -9,12 +9,15 @@ html, body {
 	width:100%;
 	height:100%;
 }
-html {display:table;}
+html {
+  display:table;
+  font-family: consolas;
+}
 body {
 	display:table-cell;
 	vertical-align:middle;
 	text-align: center;
-	font-size: 1.2em;
+	font-size: 1.5em;
 }
 
 h1 {
@@ -118,7 +121,7 @@ tr:nth-child(even) > th:not(:last-child){
 }
 
 </style>
-<link rel="stylesheet" href="oscillotrainingtable_assets/flipclock.css">
+<link rel="stylesheet" href="./oscillotrainingtable_assets/flipclock.css">
 </head>
 <body>
 <h1>timer &amp; table</h1>
@@ -175,7 +178,8 @@ configuration:<br>
 
 <table id="mytable" cellspacing="0"></table>
 
-<script src="oscillotrainingtable_assets/jquery.js"></script>
+<script src="oscillotrainingtable_assets/jquery-1.3.2.min.js"></script>
+<script src="oscillotrainingtable_assets/jquery.hotkeys.js"></script>
 <script src="oscillotrainingtable_assets/flipclock.js"></script>
 <script src="oscillotrainingtable_assets/soundmanager2-jsmin.js"></script>
 
@@ -262,6 +266,22 @@ function updateTodaysCount() {
 function getDayOfTable(){
 	return Math.floor(config.count / getSetCountADay()) % config.ratio.day.length;
 }
+
+function getTrainingIndex(){
+  return Math.floor(config.count / config.ratio.set.length) % getTrainingADay();
+}
+function getTrainingNameIndex(training_index){
+  return training_index * 2;
+}
+function getTrainingMaxRepIndex(training_index){
+  return training_index * 2 + 1;
+}
+function getTrainingName(training_index){
+  return config.training[getTrainingNameIndex(training_index)];
+}
+function getTrainingMaxRep(training_index){
+  return config.training[getTrainingMaxRepIndex(training_index)];
+}
 function updateTrainingElements() {
 	var set_count = parseInt(sp_set_count.innerText);
 	var col_of_day_of_table = set_count % config.ratio.set.length;
@@ -272,19 +292,50 @@ function updateTrainingElements() {
 
 	var day_of_table = getDayOfTable();
 	sp_day.innerText = day_of_table + 1;
-  var training_index = Math.floor(config.count / config.ratio.set.length) % getTrainingADay();
-  var training = config.training[training_index * 2];
-  var max_rep = config.training[training_index * 2 + 1];
+  var training_index = getTrainingIndex();
+  var training = getTrainingName(training_index);
+  var max_rep = getTrainingMaxRep(training_index);
 	sp_training.innerText = training;
 	sp_max_rep.innerText = max_rep;
 
-	var rep = Math.floor(max_rep * config.ratio.day[day_of_table] * config.ratio.set[config.count % config.ratio.set.length]);
-	sp_rep.innerText = rep;
+  const rep_index = config.count % config.ratio.set.length;
+  const rep_ratio = config.ratio.day[day_of_table] * config.ratio.set[rep_index];
+	var rep = Math.floor(max_rep * rep_ratio);
+  sp_rep.innerHTML = `${rep} <span style="color:black;font-weight:normal;font-size:80%;">(${rep_index+1}/${config.ratio.set.length})</span>`; //, ${rep_ratio}x
 
 	updateTable();
 
 	return set_count;
 }
+
+
+function saveConfigAndUpdateTodaysCount() {
+	saveConfig();
+  return updateTodaysCount();
+}
+
+function incrementTotalCount() {
+	++config.count;
+  return saveConfigAndUpdateTodaysCount();
+}
+function decrementTotalCount() {
+	--config.count;
+  return saveConfigAndUpdateTodaysCount();
+}
+function incrementMaxRep() {
+  ++config.training[getTrainingMaxRepIndex(getTrainingIndex())]
+  saveConfigAndUpdateTodaysCount();
+}
+function decrementMaxRep() {
+  --config.training[getTrainingMaxRepIndex(getTrainingIndex())]
+  saveConfigAndUpdateTodaysCount();
+}
+
+$(document).bind('keydown', {combi: 'right', disableInInput: true}, incrementTotalCount);
+$(document).bind('keydown', {combi: 'left', disableInInput: true}, decrementTotalCount);
+$(document).bind('keydown', {combi: 'up', disableInInput: true}, incrementMaxRep);
+$(document).bind('keydown', {combi: 'down', disableInInput: true}, decrementMaxRep);
+	
 
 //the user clicked the start button.
 bt_start.addEventListener('click', function () {
@@ -293,9 +344,7 @@ bt_start.addEventListener('click', function () {
 		return;
 	}
 
-	config.count++;
-	saveConfig();
-	if(updateTodaysCount()){
+	if(incrementTotalCount()){
 		clock.setTime(config.interval[getDayOfTable()]);
 		clock.setCountdown(true);
 		clock.start();
@@ -304,14 +353,10 @@ bt_start.addEventListener('click', function () {
 });
 //rewind
 bt_rewind.addEventListener('click', function () {
-	config.count--;
-	saveConfig()
-	updateTodaysCount();
+  decrementTotalCount();
 });
 bt_forward.addEventListener('click', function () {
-	config.count++;
-	saveConfig();
-	updateTodaysCount();
+  incrementTotalCount();
 });
 
 $('#show_table').click(function() {
@@ -363,7 +408,7 @@ function updateTable() {
 	$('th', $t).attr('colspan', config.training.length / 2 + 1);
 }
 
-updateTodaysCount();
+updateTodaysCount();	
 </script>
 </body>
 </html>
